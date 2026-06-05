@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="ระบบฝึกอบรมวิดีโอออนไลน์พร้อมแบบทดสอบก่อนและหลังเรียน">
+    <title>Wasuwat Training - ระบบฝึกอบรมและแบบทดสอบออนไลน์</title>
+    <!-- Google Fonts: Outfit & Noto Sans Thai -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Main Application Container -->
+    <div id="app">
+        <!-- The app will dynamically mount different views here:
+             - Login View
+             - Student Dashboard View
+             - Course Learning View (Pre-test -> Video -> Post-test)
+             - Admin Dashboard View
+        -->
+        <div class="initial-loader">
+            <div class="loader-spinner"></div>
+            <p>กำลังโหลดระบบระบบฝึกอบรม...</p>
+        </div>
+    </div>
+
+    <!-- Application Javascript Logic -->
+    <script src="app.js" defer></script>
+</body>
+</html>
