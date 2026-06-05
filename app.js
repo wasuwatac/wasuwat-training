@@ -13,6 +13,7 @@ const state = {
     videoMockTime: 0, // current seconds
     videoMockDuration: 15, // 15 seconds for demonstration mockup
     videoInterval: null,
+    studentActiveTab: 'dashboard', // 'dashboard', 'courses', 'profile'
     adminActiveTab: 'students', // 'students', 'courses', 'reports'
     adminEditingCourseId: null,
     adminCourseFormQuestions: [], // temp store for building questions in modal
@@ -544,139 +545,227 @@ function renderStudentDashboard(container) {
         <main class="container student-layout fade-in">
             <div class="page-title-section">
                 <div>
-                    <h1>แผงข้อมูลผู้เรียน (Learning Dashboard)</h1>
-                    <p>ระบบการฝึกอบรมระดับพรีเมียมส่วนบุคคลของคุณ</p>
+                    <h1>แผงข้อมูลผู้เรียน</h1>
+                    <p>ยินดีต้อนรับ, <strong>${escapeHtml(dbUser.name)}</strong></p>
                 </div>
             </div>
 
-            <!-- Stats Bar -->
-            <div class="dashboard-stats">
-                <div class="glass-panel stat-card">
-                    <div class="stat-icon"><i class="fa-solid fa-book-open"></i></div>
-                    <div class="stat-info">
-                        <h3>${totalCourses}</h3>
-                        <p>บทเรียนที่คุณต้องเรียน</p>
+            <!-- Student Tab Headers -->
+            <div class="tabs-header student-tabs-header">
+                <button class="tab-btn ${state.studentActiveTab === 'dashboard' ? 'active' : ''}" id="stud-tab-dashboard-btn">
+                    <i class="fa-solid fa-gauge-high"></i> <span class="tab-label">ภาพรวม</span>
+                </button>
+                <button class="tab-btn ${state.studentActiveTab === 'courses' ? 'active' : ''}" id="stud-tab-courses-btn">
+                    <i class="fa-solid fa-graduation-cap"></i> <span class="tab-label">วิชาเรียน</span>
+                    ${assignedCourses.length > 0 ? `<span class="tab-count-badge">${assignedCourses.length}</span>` : ''}
+                </button>
+                <button class="tab-btn ${state.studentActiveTab === 'profile' ? 'active' : ''}" id="stud-tab-profile-btn">
+                    <i class="fa-solid fa-user-pen"></i> <span class="tab-label">โปรไฟล์</span>
+                </button>
+            </div>
+
+            <!-- TAB 1: Dashboard Overview -->
+            <div class="student-tab-section ${state.studentActiveTab === 'dashboard' ? 'active' : ''}" id="stud-sec-dashboard">
+                <div class="dashboard-stats">
+                    <div class="glass-panel stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-book-open"></i></div>
+                        <div class="stat-info">
+                            <h3>${totalCourses}</h3>
+                            <p>บทเรียนทั้งหมด</p>
+                        </div>
+                    </div>
+                    <div class="glass-panel stat-card">
+                        <div class="stat-icon" style="background:var(--accent-glow);color:var(--accent);"><i class="fa-solid fa-spinner"></i></div>
+                        <div class="stat-info">
+                            <h3>${inProgressCount}</h3>
+                            <p>กำลังศึกษาอยู่</p>
+                        </div>
+                    </div>
+                    <div class="glass-panel stat-card completed">
+                        <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+                        <div class="stat-info">
+                            <h3>${completedCount}</h3>
+                            <p>สำเร็จแล้ว</p>
+                        </div>
                     </div>
                 </div>
-                <div class="glass-panel stat-card">
-                    <div class="stat-icon" style="background: var(--accent-glow); color: var(--accent);"><i class="fa-solid fa-spinner"></i></div>
-                    <div class="stat-info">
-                        <h3>${inProgressCount}</h3>
-                        <p>กำลังศึกษาอยู่</p>
+
+                <!-- Mini profile card on dashboard tab -->
+                <div class="glass-panel stud-profile-mini">
+                    <div class="stud-profile-mini-avatar">
+                        ${dbUser.avatar && dbUser.avatar.trim() !== ''
+                            ? `<img src="${dbUser.avatar}" alt="avatar">`
+                            : `<span>${dbUser.name ? dbUser.name.charAt(0).toUpperCase() : 'U'}</span>`}
                     </div>
+                    <div class="stud-profile-mini-info">
+                        <h3>${escapeHtml(dbUser.name)}</h3>
+                        <p>${escapeHtml(dbUser.position || 'ผู้เรียน')} ${dbUser.department ? '· ' + escapeHtml(dbUser.department) : ''}</p>
+                        ${dbUser.bio ? `<p style="color:var(--text-dark); font-size:0.8rem; margin-top:4px;">"${escapeHtml(dbUser.bio)}"</p>` : ''}
+                    </div>
+                    <button class="btn btn-secondary stud-goto-courses-btn" style="margin-left:auto; white-space:nowrap; flex-shrink:0;">
+                        <i class="fa-solid fa-arrow-right"></i> ไปยังวิชาเรียน
+                    </button>
                 </div>
-                <div class="glass-panel stat-card completed">
-                    <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
-                    <div class="stat-info">
-                        <h3>${completedCount}</h3>
-                        <p>สำเร็จการอบรมแล้ว</p>
-                    </div>
+
+                <!-- Recent courses quick access -->
+                <div>
+                    <h3 class="course-section-title">
+                        <i class="fa-solid fa-clock-rotate-left" style="color:var(--primary);"></i>
+                        วิชาที่กำลังเรียนอยู่
+                    </h3>
+                    ${assignedCourses.filter(c => {
+                        const p = progress[c.id];
+                        return p && p.status !== 'completed';
+                    }).length > 0 ? `
+                    <div class="course-grid">
+                        ${assignedCourses.filter(c => {
+                            const p = progress[c.id];
+                            return p && p.status !== 'completed';
+                        }).map(course => {
+                            const prog = progress[course.id];
+                            return `
+                                <div class="course-card glass-panel fade-in">
+                                    <div class="course-header">
+                                        <span class="course-badge badge-inprogress"><i class="fa-solid fa-spinner"></i> กำลังเรียนอยู่</span>
+                                        <h2>${course.title}</h2>
+                                    </div>
+                                    <div class="course-footer">
+                                        <button class="btn btn-primary start-course-btn" data-id="${course.id}">
+                                            เรียนต่อจากเดิม <i class="fa-solid fa-arrow-right"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>` : `
+                    <div class="glass-panel" style="padding:24px; text-align:center; color:var(--text-muted);">
+                        <i class="fa-solid fa-mug-hot" style="font-size:2rem; margin-bottom:10px; color:var(--text-dark);"></i>
+                        <p>${completedCount === totalCourses && totalCourses > 0 ? 'คุณเรียนครบทุกวิชาแล้ว 🎉' : 'ยังไม่มีวิชาที่กำลังเรียนอยู่'}</p>
+                        <button class="btn btn-primary stud-goto-courses-btn" style="margin-top:12px;">ดูวิชาเรียนทั้งหมด</button>
+                    </div>`}
                 </div>
             </div>
 
-            <!-- Courses Section -->
-            <div>
+            <!-- TAB 2: Courses -->
+            <div class="student-tab-section ${state.studentActiveTab === 'courses' ? 'active' : ''}" id="stud-sec-courses">
                 <h3 class="course-section-title">
-                    <i class="fa-solid fa-graduation-cap" style="color: var(--primary);"></i>
-                    วิชาเรียนที่ได้รับมอบหมาย
+                    <i class="fa-solid fa-graduation-cap" style="color:var(--primary);"></i>
+                    วิชาเรียนที่ได้รับมอบหมาย (${assignedCourses.length} วิชา)
                 </h3>
                 ${coursesHTML}
             </div>
 
-            <!-- Personal Profile Section -->
-            <div class="glass-panel profile-section-card">
-                <h2><i class="fa-solid fa-address-card"></i> จัดการโปรไฟล์ผู้ใช้งาน</h2>
-                
-                <div class="profile-layout">
-                    <!-- Column 1: Avatar -->
-                    <div class="profile-avatar-col">
-                        <div class="avatar-upload-frame" id="avatar-frame-btn">
-                            ${profilePicHTML}
-                            <div class="avatar-upload-overlay">
-                                <i class="fa-solid fa-camera"></i>
-                                <span>คลิกเปลี่ยนรูปภาพ</span>
+            <!-- TAB 3: Profile -->
+            <div class="student-tab-section ${state.studentActiveTab === 'profile' ? 'active' : ''}" id="stud-sec-profile">
+                <!-- Profile Edit Card -->
+                <div class="glass-panel profile-section-card">
+                    <h2><i class="fa-solid fa-address-card"></i> จัดการโปรไฟล์ผู้ใช้งาน</h2>
+                    <div class="profile-layout">
+                        <div class="profile-avatar-col">
+                            <div class="avatar-upload-frame" id="avatar-frame-btn">
+                                ${profilePicHTML}
+                                <div class="avatar-upload-overlay">
+                                    <i class="fa-solid fa-camera"></i>
+                                    <span>คลิกเปลี่ยนรูปภาพ</span>
+                                </div>
                             </div>
+                            <input type="file" id="profile-avatar-input" class="hidden-file-input" accept="image/*">
+                            <span class="avatar-label-info">* JPG, PNG, JPEG (ไม่เกิน 2MB)</span>
                         </div>
-                        <input type="file" id="profile-avatar-input" class="hidden-file-input" accept="image/*">
-                        <span class="avatar-label-info">
-                            * รูปสี่เหลี่ยมจัตุรัสจะแสดงผลดีที่สุด <br>
-                            (ระบบรองรับไฟล์ JPG, PNG และ JPEG)
-                        </span>
+                        <form id="save-profile-form" style="width:100%;">
+                            <div class="profile-form-grid">
+                                <div class="form-group">
+                                    <label for="prof-name">ชื่อ-นามสกุลจริง</label>
+                                    <input type="text" id="prof-name" class="input-field" style="padding-left:14px;" value="${escapeHtml(dbUser.name)}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="prof-email">อีเมล</label>
+                                    <input type="email" id="prof-email" class="input-field" style="padding-left:14px;" value="${escapeHtml(dbUser.email || '')}" placeholder="เช่น somchai@wasuwat.com">
+                                </div>
+                                <div class="form-group">
+                                    <label for="prof-phone">เบอร์โทรศัพท์</label>
+                                    <input type="tel" id="prof-phone" class="input-field" style="padding-left:14px;" value="${escapeHtml(dbUser.phone || '')}" placeholder="เช่น 089-123-4567">
+                                </div>
+                                <div class="form-group">
+                                    <label for="prof-dept">ฝ่าย / แผนก</label>
+                                    <input type="text" id="prof-dept" class="input-field" style="padding-left:14px;" value="${escapeHtml(dbUser.department || '')}" placeholder="เช่น ฝ่ายการตลาด">
+                                </div>
+                                <div class="form-group">
+                                    <label for="prof-pos">ตำแหน่งหน้าที่</label>
+                                    <input type="text" id="prof-pos" class="input-field" style="padding-left:14px;" value="${escapeHtml(dbUser.position || '')}" placeholder="เช่น Sales Executive">
+                                </div>
+                                <div class="form-group">
+                                    <label for="prof-bio">Bio</label>
+                                    <input type="text" id="prof-bio" class="input-field" style="padding-left:14px;" value="${escapeHtml(dbUser.bio || '')}" placeholder="แนะนำตัวสั้น ๆ...">
+                                </div>
+                            </div>
+                            <div style="text-align:right; margin-top:10px;">
+                                <button type="submit" class="btn btn-primary">
+                                    บันทึกข้อมูลโปรไฟล์ <i class="fa-solid fa-circle-check"></i>
+                                </button>
+                            </div>
+                        </form>
                     </div>
+                </div>
 
-                    <!-- Column 2: Personal fields form -->
-                    <form id="save-profile-form" style="width: 100%;">
-                        <div class="profile-form-grid">
-                            <div class="form-group">
-                                <label for="prof-name">ชื่อ-นามสกุลจริง</label>
-                                <input type="text" id="prof-name" class="input-field" style="padding-left:14px;" value="${escapeHtml(dbUser.name)}" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="prof-email">ที่อยู่อีเมล (Email)</label>
-                                <input type="email" id="prof-email" class="input-field" style="padding-left:14px;" value="${escapeHtml(dbUser.email || '')}" placeholder="เช่น somchai@wasuwat.com">
-                            </div>
-                            <div class="form-group">
-                                <label for="prof-phone">เบอร์โทรศัพท์ติดต่อ</label>
-                                <input type="tel" id="prof-phone" class="input-field" style="padding-left:14px;" value="${escapeHtml(dbUser.phone || '')}" placeholder="เช่น 089-123-4567">
-                            </div>
-                            <div class="form-group">
-                                <label for="prof-dept">ฝ่าย / แผนกงาน</label>
-                                <input type="text" id="prof-dept" class="input-field" style="padding-left:14px;" value="${escapeHtml(dbUser.department || '')}" placeholder="เช่น ฝ่ายการตลาด (Marketing)">
-                            </div>
-                            <div class="form-group">
-                                <label for="prof-pos">ตำแหน่งหน้าที่</label>
-                                <input type="text" id="prof-pos" class="input-field" style="padding-left:14px;" value="${escapeHtml(dbUser.position || '')}" placeholder="เช่น Senior Sales Executive">
-                            </div>
-                            <div class="form-group">
-                                <label for="prof-bio">ข้อมูลแนะตัวย่อ (Bio)</label>
-                                <input type="text" id="prof-bio" class="input-field" style="padding-left:14px;" value="${escapeHtml(dbUser.bio || '')}" placeholder="คำคมแนะนำตัวเองสั้น ๆ...">
+                <!-- Password Change Card -->
+                <div class="glass-panel settings-section" style="max-width:100%; margin:0;">
+                    <h2><i class="fa-solid fa-shield-halved"></i> เปลี่ยนรหัสผ่าน</h2>
+                    <form id="change-pwd-form">
+                        <div class="form-group">
+                            <label for="curr-pwd">รหัสผ่านปัจจุบัน</label>
+                            <div class="input-container">
+                                <input type="password" id="curr-pwd" class="input-field" placeholder="กรอกรหัสผ่านเดิม..." required>
+                                <i class="fa-solid fa-unlock"></i>
                             </div>
                         </div>
-                        <div style="text-align: right; margin-top: 10px;">
-                            <button type="submit" class="btn btn-primary">
-                                บันทึกข้อมูลโปรไฟล์ <i class="fa-solid fa-circle-check"></i>
-                            </button>
+                        <div class="form-group">
+                            <label for="new-pwd">รหัสผ่านใหม่</label>
+                            <div class="input-container">
+                                <input type="password" id="new-pwd" class="input-field" placeholder="กรอกรหัสผ่านใหม่..." required>
+                                <i class="fa-solid fa-lock"></i>
+                            </div>
                         </div>
+                        <div class="form-group">
+                            <label for="confirm-pwd">ยืนยันรหัสผ่านใหม่</label>
+                            <div class="input-container">
+                                <input type="password" id="confirm-pwd" class="input-field" placeholder="ยืนยันรหัสผ่านใหม่..." required>
+                                <i class="fa-solid fa-circle-check"></i>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width:100%;">
+                            บันทึกรหัสผ่านใหม่ <i class="fa-solid fa-key"></i>
+                        </button>
                     </form>
                 </div>
             </div>
 
-            <!-- Account Security Section -->
-            <div class="glass-panel settings-section">
-                <h2><i class="fa-solid fa-shield-halved"></i> ความปลอดภัยและการเปลี่ยนรหัสผ่าน</h2>
-                <form id="change-pwd-form">
-                    <div class="form-group">
-                        <label for="curr-pwd">รหัสผ่านปัจจุบัน (Current Password)</label>
-                        <div class="input-container">
-                            <input type="password" id="curr-pwd" class="input-field" placeholder="กรอกรหัสผ่านเดิม..." required>
-                            <i class="fa-solid fa-unlock"></i>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="new-pwd">รหัสผ่านใหม่ (New Password)</label>
-                        <div class="input-container">
-                            <input type="password" id="new-pwd" class="input-field" placeholder="กรอกรหัสผ่านใหม่..." required>
-                            <i class="fa-solid fa-lock"></i>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="confirm-pwd">ยืนยันรหัสผ่านใหม่ (Confirm Password)</label>
-                        <div class="input-container">
-                            <input type="password" id="confirm-pwd" class="input-field" placeholder="ยืนยันรหัสผ่านใหม่อีกครั้ง..." required>
-                            <i class="fa-solid fa-circle-check"></i>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">
-                        บันทึกรหัสผ่านใหม่ <i class="fa-solid fa-key"></i>
-                    </button>
-                </form>
-            </div>
         </main>
     `;
 
     bindHeaderEvents();
 
-    // Bind Course Start buttons
+    // Student Tab switching
+    document.getElementById('stud-tab-dashboard-btn').addEventListener('click', () => {
+        state.studentActiveTab = 'dashboard';
+        renderStudentDashboard(document.getElementById('app'));
+    });
+    document.getElementById('stud-tab-courses-btn').addEventListener('click', () => {
+        state.studentActiveTab = 'courses';
+        renderStudentDashboard(document.getElementById('app'));
+    });
+    document.getElementById('stud-tab-profile-btn').addEventListener('click', () => {
+        state.studentActiveTab = 'profile';
+        renderStudentDashboard(document.getElementById('app'));
+    });
+
+    // "ไปยังวิชาเรียน" shortcut buttons on dashboard tab
+    document.querySelectorAll('.stud-goto-courses-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            state.studentActiveTab = 'courses';
+            renderStudentDashboard(document.getElementById('app'));
+        });
+    });
     const startBtns = document.querySelectorAll('.start-course-btn');
     startBtns.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -1685,82 +1774,37 @@ function renderAdminDashboard(container) {
 
         <!-- ADD STUDENT MODAL -->
         <div class="modal-overlay" id="student-modal">
-            <div class="modal-content large glass-panel">
+            <div class="modal-content glass-panel">
                 <button class="modal-close" id="student-modal-close"><i class="fa-solid fa-xmark"></i></button>
-                <div class="modal-title"><i class="fa-solid fa-user-plus" style="color:var(--primary);margin-right:8px;"></i>เพิ่มโปรไฟล์ผู้เรียนใหม่</div>
+                <div class="modal-title">เพิ่มผู้เรียนใหม่เข้าสู่ระบบ</div>
                 <form id="add-student-form">
-                    <!-- Avatar Upload Row -->
-                    <div class="add-stud-avatar-row">
-                        <div class="add-stud-avatar-wrap" id="add-stud-avatar-frame">
-                            <div class="add-stud-avatar-placeholder" id="add-stud-avatar-preview-wrap">
-                                <i class="fa-solid fa-user" style="font-size:2.2rem; color:var(--primary);"></i>
-                            </div>
-                            <div class="avatar-upload-overlay">
-                                <i class="fa-solid fa-camera"></i>
-                                <span>เพิ่มรูป</span>
-                            </div>
-                        </div>
-                        <input type="file" id="add-stud-avatar-input" class="hidden-file-input" accept="image/*">
-                        <div style="font-size:0.8rem; color:var(--text-muted); margin-top:6px; text-align:center;">คลิกเพื่ออัปโหลดรูปโปรไฟล์<br>(ไม่บังคับ)</div>
-                    </div>
-
-                    <!-- Account Fields -->
-                    <div class="modal-section-label"><i class="fa-solid fa-lock"></i> ข้อมูลบัญชีผู้ใช้</div>
-                    <div class="profile-form-grid">
-                        <div class="form-group">
-                            <label for="new-stud-name">ชื่อ-นามสกุลจริง <span style="color:var(--error)">*</span></label>
-                            <div class="input-container">
-                                <input type="text" id="new-stud-name" class="input-field" placeholder="ตัวอย่าง: สมเกียรติ มั่นคง" required>
-                                <i class="fa-solid fa-font"></i>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="new-stud-user">Username สำหรับ Login <span style="color:var(--error)">*</span></label>
-                            <div class="input-container">
-                                <input type="text" id="new-stud-user" class="input-field" placeholder="ตัวอย่าง: somkiat" required>
-                                <i class="fa-solid fa-user-tag"></i>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="new-stud-pwd">รหัสผ่านเริ่มต้น <span style="color:var(--error)">*</span></label>
-                            <div class="input-container">
-                                <input type="text" id="new-stud-pwd" class="input-field" placeholder="ตัวอย่าง: pass123" required>
-                                <i class="fa-solid fa-key"></i>
-                            </div>
-                            <p style="font-size:0.75rem; color:var(--primary); margin-top:6px; cursor:pointer;" id="btn-generate-pwd">
-                                <i class="fa-solid fa-dice"></i> สุ่มรหัสผ่านอัตโนมัติ
-                            </p>
+                    <div class="form-group">
+                        <label for="new-stud-name">ชื่อ-นามสกุลจริง</label>
+                        <div class="input-container">
+                            <input type="text" id="new-stud-name" class="input-field" placeholder="ตัวอย่าง: สมเกียรติ มั่นคง" required>
+                            <i class="fa-solid fa-font"></i>
                         </div>
                     </div>
-
-                    <!-- Profile Fields -->
-                    <div class="modal-section-label" style="margin-top:8px;"><i class="fa-solid fa-address-card"></i> ข้อมูลโปรไฟล์ส่วนตัว</div>
-                    <div class="profile-form-grid">
-                        <div class="form-group">
-                            <label for="new-stud-email">ที่อยู่อีเมล</label>
-                            <input type="email" id="new-stud-email" class="input-field" style="padding-left:14px;" placeholder="เช่น somkiat@wasuwat.com">
-                        </div>
-                        <div class="form-group">
-                            <label for="new-stud-phone">เบอร์โทรศัพท์</label>
-                            <input type="tel" id="new-stud-phone" class="input-field" style="padding-left:14px;" placeholder="เช่น 089-xxx-xxxx">
-                        </div>
-                        <div class="form-group">
-                            <label for="new-stud-dept">ฝ่าย / แผนกงาน</label>
-                            <input type="text" id="new-stud-dept" class="input-field" style="padding-left:14px;" placeholder="เช่น ฝ่ายการตลาด">
-                        </div>
-                        <div class="form-group">
-                            <label for="new-stud-pos">ตำแหน่งหน้าที่</label>
-                            <input type="text" id="new-stud-pos" class="input-field" style="padding-left:14px;" placeholder="เช่น Sales Executive">
-                        </div>
-                        <div class="form-group" style="grid-column: 1 / -1;">
-                            <label for="new-stud-bio">แนะนำตัวย่อ (Bio)</label>
-                            <input type="text" id="new-stud-bio" class="input-field" style="padding-left:14px;" placeholder="คำแนะนำตัวสั้น ๆ...">
+                    <div class="form-group">
+                        <label for="new-stud-user">ชื่อผู้ใช้งานสำหรับ Login (Username)</label>
+                        <div class="input-container">
+                            <input type="text" id="new-stud-user" class="input-field" placeholder="ตัวอย่าง: somkiat" required>
+                            <i class="fa-solid fa-user-tag"></i>
                         </div>
                     </div>
-
-                    <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px; border-top:1px solid var(--border-color); padding-top:16px;">
+                    <div class="form-group">
+                        <label for="new-stud-pwd">รหัสผ่านสำหรับเริ่มต้น</label>
+                        <div class="input-container">
+                            <input type="text" id="new-stud-pwd" class="input-field" placeholder="ตัวอย่าง: pass123" required>
+                            <i class="fa-solid fa-key"></i>
+                        </div>
+                        <p style="font-size:0.75rem; color:var(--text-muted); margin-top:6px; cursor:pointer;" id="btn-generate-pwd">
+                            <i class="fa-solid fa-dice"></i> สุ่มรหัสผ่านอัตโนมัติ
+                        </p>
+                    </div>
+                    <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px;">
                         <button type="button" class="btn btn-secondary" id="btn-cancel-student">ยกเลิก</button>
-                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-user-plus"></i> สร้างโปรไฟล์ผู้เรียน</button>
+                        <button type="submit" class="btn btn-primary">สร้างบัญชีผู้ใช้</button>
                     </div>
                 </form>
             </div>
@@ -1768,48 +1812,25 @@ function renderAdminDashboard(container) {
 
         <!-- EDIT STUDENT INFO MODAL (ADMIN ONLY) -->
         <div class="modal-overlay" id="edit-student-modal">
-            <div class="modal-content large glass-panel" style="max-width: 680px;">
+            <div class="modal-content glass-panel" style="max-width: 600px;">
                 <button class="modal-close" id="edit-student-modal-close"><i class="fa-solid fa-xmark"></i></button>
-                <div class="modal-title"><i class="fa-solid fa-user-pen" style="color:var(--primary);margin-right:8px;"></i>แก้ไขข้อมูลและโปรไฟล์ผู้เรียน</div>
-                
-                <!-- Avatar Upload Section -->
-                <div class="add-stud-avatar-row" style="margin-bottom:20px;">
-                    <div class="add-stud-avatar-wrap" id="edit-stud-avatar-frame">
-                        <div class="add-stud-avatar-placeholder" id="edit-stud-avatar-preview-wrap">
-                            <i class="fa-solid fa-user" style="font-size:2.2rem; color:var(--primary);"></i>
-                        </div>
-                        <div class="avatar-upload-overlay">
-                            <i class="fa-solid fa-camera"></i>
-                            <span>เปลี่ยนรูป</span>
-                        </div>
-                    </div>
-                    <input type="file" id="edit-stud-avatar-input" class="hidden-file-input" accept="image/*">
-                    <div style="font-size:0.8rem; color:var(--text-muted); margin-top:6px; text-align:center;">คลิกเพื่อเปลี่ยนรูปโปรไฟล์</div>
-                </div>
-
+                <div class="modal-title">แก้ไขข้อมูลและโปรไฟล์ผู้เรียน</div>
                 <form id="edit-student-form">
-                    <!-- Account Fields -->
-                    <div class="modal-section-label"><i class="fa-solid fa-lock"></i> ข้อมูลบัญชีผู้ใช้</div>
                     <div class="profile-form-grid">
                         <div class="form-group">
-                            <label for="edit-stud-name">ชื่อ-นามสกุลจริง <span style="color:var(--error)">*</span></label>
+                            <label for="edit-stud-name">ชื่อ-นามสกุลจริง</label>
                             <input type="text" id="edit-stud-name" class="input-field" style="padding-left:14px;" required>
                         </div>
                         <div class="form-group">
                             <label for="edit-stud-user">Username (แก้ไขไม่ได้)</label>
-                            <input type="text" id="edit-stud-user" class="input-field" style="padding-left:14px; opacity:0.5; cursor:not-allowed;" readonly>
+                            <input type="text" id="edit-stud-user" class="input-field" style="padding-left:14px;" readonly style="opacity:0.6; cursor:not-allowed;">
                         </div>
                         <div class="form-group">
-                            <label for="edit-stud-pwd">รหัสผ่าน <span style="color:var(--error)">*</span></label>
+                            <label for="edit-stud-pwd">รหัสผ่านใหม่ (หากต้องการเปลี่ยน)</label>
                             <input type="text" id="edit-stud-pwd" class="input-field" style="padding-left:14px;" required>
                         </div>
-                    </div>
-
-                    <!-- Profile Fields -->
-                    <div class="modal-section-label" style="margin-top:8px;"><i class="fa-solid fa-address-card"></i> ข้อมูลโปรไฟล์ส่วนตัว</div>
-                    <div class="profile-form-grid">
                         <div class="form-group">
-                            <label for="edit-stud-email">อีเมล</label>
+                            <label for="edit-stud-email">อีเมล (Email)</label>
                             <input type="email" id="edit-stud-email" class="input-field" style="padding-left:14px;" placeholder="เช่น sales@wasuwat.com">
                         </div>
                         <div class="form-group">
@@ -1824,27 +1845,14 @@ function renderAdminDashboard(container) {
                             <label for="edit-stud-pos">ตำแหน่งหน้าที่</label>
                             <input type="text" id="edit-stud-pos" class="input-field" style="padding-left:14px;">
                         </div>
-                        <div class="form-group" style="grid-column: 1 / -1;">
+                        <div class="form-group">
                             <label for="edit-stud-bio">แนะนำตัวย่อ (Bio)</label>
                             <input type="text" id="edit-stud-bio" class="input-field" style="padding-left:14px;">
                         </div>
                     </div>
-
-                    <!-- Danger Zone -->
-                    <div class="modal-section-label danger-zone-label" style="margin-top:8px;"><i class="fa-solid fa-triangle-exclamation"></i> โซนอันตราย (Danger Zone)</div>
-                    <div style="background: var(--error-glow); border: 1px solid rgba(244,63,94,0.2); border-radius: var(--border-radius-sm); padding: 14px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-                        <div>
-                            <p style="font-size:0.85rem; font-weight:600; color:var(--error);">รีเซ็ตข้อมูลความคืบหน้าการเรียน</p>
-                            <p style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">ลบคะแนนสอบและสถานะการเรียนทั้งหมดของผู้เรียนคนนี้</p>
-                        </div>
-                        <button type="button" class="btn btn-secondary btn-danger" id="btn-reset-student-progress" style="padding:8px 14px; font-size:0.8rem; white-space:nowrap; flex-shrink:0;">
-                            <i class="fa-solid fa-rotate-left"></i> รีเซ็ตความคืบหน้า
-                        </button>
-                    </div>
-
                     <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px; border-top: 1px solid var(--border-color); padding-top:16px;">
                         <button type="button" class="btn btn-secondary" id="btn-cancel-edit-student">ยกเลิก</button>
-                        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-circle-check"></i> บันทึกการเปลี่ยนแปลง</button>
+                        <button type="submit" class="btn btn-primary">บันทึกการเปลี่ยนแปลง</button>
                     </div>
                 </form>
             </div>
@@ -1968,28 +1976,6 @@ function bindAdminDashboardEvents() {
     document.getElementById('btn-cancel-student').addEventListener('click', () => studModal.classList.remove('show'));
     document.getElementById('btn-generate-pwd').addEventListener('click', generateRandomPassword);
 
-    // Avatar upload for Add Student modal
-    const addAvatarFrame = document.getElementById('add-stud-avatar-frame');
-    const addAvatarInput = document.getElementById('add-stud-avatar-input');
-    let pendingNewStudentAvatar = '';
-
-    if (addAvatarFrame && addAvatarInput) {
-        addAvatarFrame.addEventListener('click', () => addAvatarInput.click());
-        addAvatarInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            if (file.size > 2 * 1024 * 1024) { showToast('ขนาดภาพต้องไม่เกิน 2MB', 'error'); return; }
-            handleAvatarUpload(file, (base64Data) => {
-                pendingNewStudentAvatar = base64Data;
-                const wrap = document.getElementById('add-stud-avatar-preview-wrap');
-                if (wrap) {
-                    wrap.innerHTML = `<img src="${base64Data}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
-                }
-                showToast('โหลดรูปโปรไฟล์แล้ว', 'success');
-            });
-        });
-    }
-
     function generateRandomPassword() {
         const rand = 'pwd_' + Math.floor(1000 + Math.random() * 9000);
         document.getElementById('new-stud-pwd').value = rand;
@@ -2000,11 +1986,6 @@ function bindAdminDashboardEvents() {
         const name = document.getElementById('new-stud-name').value.trim();
         const username = document.getElementById('new-stud-user').value.trim().toLowerCase();
         const password = document.getElementById('new-stud-pwd').value;
-        const email = document.getElementById('new-stud-email').value.trim();
-        const phone = document.getElementById('new-stud-phone').value.trim();
-        const department = document.getElementById('new-stud-dept').value.trim();
-        const position = document.getElementById('new-stud-pos').value.trim();
-        const bio = document.getElementById('new-stud-bio').value.trim();
 
         const users = getUsers();
         const courses = getCourses();
@@ -2021,17 +2002,16 @@ function bindAdminDashboardEvents() {
             role: 'student',
             assignedCourses: courses.map(c => c.id),
             progress: {},
-            avatar: pendingNewStudentAvatar || '',
-            email,
-            phone,
-            department,
-            position,
-            bio
+            avatar: '',
+            email: '',
+            phone: '',
+            department: '',
+            position: '',
+            bio: ''
         });
 
         saveUsers(users);
-        pendingNewStudentAvatar = '';
-        showToast(`สร้างโปรไฟล์ผู้เรียน "${name}" เรียบร้อยแล้ว`, 'success');
+        showToast(`สร้างบัญชีผู้เรียน ${name} เรียบร้อยแล้ว`, 'success');
         studModal.classList.remove('show');
         renderAdminDashboard(document.getElementById('app'));
     });
@@ -2053,13 +2033,11 @@ function bindAdminDashboardEvents() {
     // --- EDIT STUDENT INFO LOGIC (ADMIN MODAL) ---
     const editStudModal = document.getElementById('edit-student-modal');
     const editStudBtns = document.querySelectorAll('.edit-student-btn');
-    let pendingEditStudentAvatar = null; // null = no change, string = new base64
 
     editStudBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             const username = btn.getAttribute('data-username');
             state.activeEditingStudentUser = username;
-            pendingEditStudentAvatar = null;
 
             const users = getUsers();
             const student = users.find(u => u.username === username);
@@ -2075,59 +2053,12 @@ function bindAdminDashboardEvents() {
             document.getElementById('edit-stud-pos').value = student.position || '';
             document.getElementById('edit-stud-bio').value = student.bio || '';
 
-            // Populate avatar preview in edit modal
-            const avatarWrap = document.getElementById('edit-stud-avatar-preview-wrap');
-            if (avatarWrap) {
-                if (student.avatar && student.avatar.trim() !== '') {
-                    avatarWrap.innerHTML = `<img src="${student.avatar}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
-                } else {
-                    const initial = student.name ? student.name.charAt(0).toUpperCase() : 'U';
-                    avatarWrap.innerHTML = `<span style="font-size:2rem; font-weight:700; color:var(--primary);">${initial}</span>`;
-                }
-            }
-
             editStudModal.classList.add('show');
         });
     });
 
-    // Avatar upload binding for Edit Student modal
-    const editAvatarFrame = document.getElementById('edit-stud-avatar-frame');
-    const editAvatarInput = document.getElementById('edit-stud-avatar-input');
-
-    if (editAvatarFrame && editAvatarInput) {
-        editAvatarFrame.addEventListener('click', () => editAvatarInput.click());
-        editAvatarInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            if (file.size > 2 * 1024 * 1024) { showToast('ขนาดภาพต้องไม่เกิน 2MB', 'error'); return; }
-            handleAvatarUpload(file, (base64Data) => {
-                pendingEditStudentAvatar = base64Data;
-                const wrap = document.getElementById('edit-stud-avatar-preview-wrap');
-                if (wrap) {
-                    wrap.innerHTML = `<img src="${base64Data}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
-                }
-                showToast('โหลดรูปโปรไฟล์ใหม่แล้ว', 'success');
-            });
-        });
-    }
-
     document.getElementById('edit-student-modal-close').addEventListener('click', () => editStudModal.classList.remove('show'));
     document.getElementById('btn-cancel-edit-student').addEventListener('click', () => editStudModal.classList.remove('show'));
-
-    // Reset progress button
-    document.getElementById('btn-reset-student-progress').addEventListener('click', () => {
-        const username = state.activeEditingStudentUser;
-        if (!username) return;
-        if (confirm(`รีเซ็ตข้อมูลความคืบหน้าการเรียนทั้งหมดของ "${username}" ใช่หรือไม่?\nคะแนนสอบและสถานะเรียนทั้งหมดจะถูกลบออก`)) {
-            const users = getUsers();
-            const index = users.findIndex(u => u.username === username);
-            if (index !== -1) {
-                users[index].progress = {};
-                saveUsers(users);
-                showToast(`รีเซ็ตความคืบหน้าของ "${username}" เรียบร้อยแล้ว`, 'success');
-            }
-        }
-    });
 
     document.getElementById('edit-student-form').addEventListener('submit', (e) => {
         e.preventDefault();
@@ -2155,9 +2086,6 @@ function bindAdminDashboardEvents() {
             users[index].department = deptVal;
             users[index].position = posVal;
             users[index].bio = bioVal;
-            if (pendingEditStudentAvatar !== null) {
-                users[index].avatar = pendingEditStudentAvatar;
-            }
 
             saveUsers(users);
             showToast('แก้ไขข้อมูลประวัติผู้เรียนเรียบร้อยแล้ว', 'success');

@@ -1764,274 +1764,155 @@ body {
     }
 }
 
-/* =============================================
-   RESPONSIVE — TABLET (≤ 900px)
-   ============================================= */
+/* Responsive Rules */
 @media (max-width: 900px) {
     .learn-layout {
         grid-template-columns: 1fr;
-        gap: 20px;
     }
+    
     .learn-sidebar {
         order: -1;
     }
-    /* Sidebar steps go horizontal on tablet */
-    .steps-list {
-        flex-direction: row;
-        overflow-x: auto;
-        gap: 10px;
-        padding-bottom: 4px;
-    }
-    .step-item {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        min-width: 110px;
-        padding: 12px 10px;
-        gap: 8px;
-    }
-    .back-dashboard-btn-wrap {
-        order: 1;
-    }
-    .admin-layout {
-        padding-bottom: 40px;
-    }
 }
 
-/* =============================================
-   RESPONSIVE — MOBILE (≤ 768px)
-   ============================================= */
 @media (max-width: 768px) {
-
-    /* ── Navbar ── */
     .navbar-container {
-        padding: 0 14px;
-        height: 60px;
-    }
-    .navbar-logo span {
-        font-size: 1.1rem;
-    }
-    .navbar-logo .logo-icon {
-        font-size: 1.3rem;
-    }
-    .navbar-profile {
-        gap: 8px;
+        padding: 0 16px;
     }
     .user-name-span {
-        display: none;
-    }
-    .user-badge {
-        padding: 5px 10px;
-        gap: 6px;
-    }
-    .role-badge {
-        display: none; /* hide on very small screens */
-    }
-    .logout-btn {
-        padding: 6px 10px;
-        font-size: 0.8rem;
-        gap: 4px;
-    }
-    /* Hide "จัดการหลังบ้าน" text on mobile, keep icon */
-    #nav-dashboard-btn span {
-        display: none;
-    }
-
-    /* ── Layout ── */
-    .container {
-        padding: 0 14px;
+        display: none; /* Hide name, keep icon on small mobile */
     }
     .page-title-section {
-        margin: 18px 0 14px 0;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
+        margin: 24px 0 16px 0;
     }
-    .page-title-section h1 {
-        font-size: 1.4rem;
-    }
-
-    /* ── Login ── */
-    .login-card {
-        padding: 28px 18px;
-    }
-    .login-header .logo {
-        font-size: 1.7rem;
-    }
-
-    /* ── Stats ── */
-    .dashboard-stats {
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
+    .container {
+        padding: 0 16px;
     }
     .stat-card {
-        padding: 14px;
-        gap: 12px;
-    }
-    .stat-icon {
-        width: 42px;
-        height: 42px;
-        font-size: 1.2rem;
-    }
-    .stat-info h3 {
-        font-size: 1.3rem;
-    }
-
-    /* ── Course Grid ── */
-    .course-grid {
-        grid-template-columns: 1fr;
-        gap: 16px;
-    }
-
-    /* ── Course Viewer ── */
-    .learn-content {
-        padding: 20px 16px;
-    }
-    .step-header h2 {
-        font-size: 1.2rem;
-    }
-    .video-wrapper {
-        border-radius: var(--border-radius-sm);
-    }
-    .video-iframe {
-        min-height: 220px;
-    }
-    .question-block {
         padding: 16px;
     }
-    .option-card {
-        padding: 12px 14px;
-        font-size: 0.9rem;
+    .admin-table th, .admin-table td {
+        padding: 10px 12px;
+        font-size: 0.85rem;
     }
-    .result-score {
-        font-size: 2.8rem;
+    .btn {
+        padding: 10px 18px;
+        font-size: 0.95rem;
     }
-
-    /* ── Profile ── */
-    .profile-section-card {
-        padding: 20px 16px;
+    .login-card {
+        padding: 30px 20px;
     }
     .profile-layout {
         grid-template-columns: 1fr;
-        gap: 20px;
     }
     .profile-avatar-col {
-        align-items: center;
-        margin-bottom: 0;
-    }
-    .settings-section {
-        padding: 20px 16px;
-        max-width: 100%;
-    }
-
-    /* ── Admin Table → Card layout ── */
-    .table-wrapper {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-    .admin-table {
-        min-width: 600px;
-    }
-    .admin-table th,
-    .admin-table td {
-        padding: 10px 10px;
-        font-size: 0.82rem;
-    }
-
-    /* ── Tabs ── */
-    .tabs-header {
-        gap: 6px;
-    }
-    .tab-btn {
-        padding: 9px 12px;
-        font-size: 0.82rem;
-    }
-
-    /* ── Section headers ── */
-    .section-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-    .section-header button {
-        width: 100%;
-        justify-content: center;
-    }
-
-    /* ── Modals ── */
-    .modal-content {
-        padding: 20px 16px;
-        margin: 12px;
-        max-height: 90vh;
-        overflow-y: auto;
-    }
-    .modal-title {
-        font-size: 1.1rem;
         margin-bottom: 16px;
-    }
-
-    /* ── Buttons ── */
-    .btn {
-        padding: 11px 18px;
-        font-size: 0.92rem;
-    }
-
-    /* ── Toast ── */
-    .toast {
-        bottom: 16px;
-        right: 14px;
-        left: 14px;
-        font-size: 0.88rem;
-        padding: 12px 16px;
-    }
-
-    /* ── Reports ── */
-    .report-groups-grid {
-        grid-template-columns: 1fr;
     }
 }
 
-/* =============================================
-   RESPONSIVE — SMALL MOBILE (≤ 480px)
-   ============================================= */
+/* ===== STUDENT DASHBOARD TABS ===== */
+
+.student-tabs-header {
+    position: sticky;
+    top: 60px;
+    z-index: 50;
+    background: var(--bg-primary);
+    padding: 10px 0;
+    margin-bottom: 4px;
+}
+
+.student-tab-section {
+    display: none;
+    flex-direction: column;
+    gap: 24px;
+    animation: fadeIn var(--transition-normal) forwards;
+}
+
+.student-tab-section.active {
+    display: flex;
+}
+
+/* Tab count badge */
+.tab-count-badge {
+    background: var(--primary);
+    color: white;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+    margin-left: 2px;
+}
+
+/* Mini profile card on overview tab */
+.stud-profile-mini {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 20px;
+    flex-wrap: wrap;
+}
+
+.stud-profile-mini-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--primary);
+    overflow: hidden;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.stud-profile-mini-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.stud-profile-mini-info {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.stud-profile-mini-info h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.stud-profile-mini-info p {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
 @media (max-width: 480px) {
-    .dashboard-stats {
-        grid-template-columns: 1fr;
+    .stud-profile-mini {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
     }
-    .stat-card {
-        flex-direction: row;
+    .stud-profile-mini .stud-goto-courses-btn {
+        width: 100%;
+        justify-content: center;
     }
-    .page-title-section h1 {
-        font-size: 1.2rem;
+    .student-tabs-header {
+        top: 60px;
     }
-    .course-header h2 {
-        font-size: 1.05rem;
+    .tab-label {
+        display: none;
     }
-    /* Steps sidebar: scroll horizontal, each item compact */
-    .step-item {
-        min-width: 90px;
-        font-size: 0.75rem;
+    .tabs-header .tab-btn {
+        flex: 1;
+        justify-content: center;
         padding: 10px 8px;
-    }
-    .step-item-info h4 {
-        font-size: 0.78rem;
-    }
-    .step-item-info p {
-        font-size: 0.68rem;
-    }
-    /* Video */
-    .video-iframe {
-        min-height: 190px;
-    }
-    /* Admin panel cards stack */
-    .admin-table {
-        min-width: 520px;
-    }
-    .profile-form-grid {
-        grid-template-columns: 1fr;
-    }
-    /* Quiz options full width */
-    .options-list {
-        gap: 10px;
+        font-size: 1rem;
     }
 }
